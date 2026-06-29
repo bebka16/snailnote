@@ -12,4 +12,6 @@ Snail Note is designed for those who value speed and dislike cluttered interface
 — Convenient file explorer for large projects<br>
 — Auto-save and session recovery<br>
 
+<img src="https://bebka16.github.io/images/1.png">
+
 <a href="https://bebka16.github.io/note.html">Offical page of the Snail Note at my website</a>
