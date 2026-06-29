@@ -1,0 +1,53 @@
+{
+  "name": "Snail",
+  "version": "2.0.0",
+  "description": "The note of the snail :)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "pack": "electron-packager . SnailNote --platform=win32 --arch=x64 --out=dist --icon=snail.ico --overwrite"
+  },
+  "build": {
+    "appId": "com.snail.note",
+    "productName": "Snail Note",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "snail.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "main.js",
+      "css.css",
+      "preload.js",
+      "index.html",
+      "dark.css",
+      "snail.png",
+      "tick.png",
+      "full-size.png",
+      "locales/**/*",
+      "langi/**/*",
+      "flags/**/*",
+      "fontawesome/**/*",
+      "node_modules/**/*",
+      "snail/**/*",
+      "**/*"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.6.3",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "@electron/remote": "^2.0.10",
+    "monaco-editor": "^0.34.1"
+  }
+}
