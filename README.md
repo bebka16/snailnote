@@ -5,9 +5,11 @@ Snail Note Features
 
 Snail Note is designed for those who value speed and dislike cluttered interfaces. The editor does not attempt to be a full-fledged development environment, yet it provides everything necessary for a smooth coding experience across various programming languages.
 
-    Syntax highlighting for a wide range of programming languages
-    Community-driven extensions and themes marketplace
-    Tabbed interface and split-view capabilities
-    HTML preview functionality
-    Convenient file explorer for large projects
-    Auto-save and session recovery
+— Syntax highlighting for a wide range of programming languages
+— Community-driven extensions and themes marketplace
+— Tabbed interface and split-view capabilities
+— HTML preview functionality
+— Convenient file explorer for large projects
+— Auto-save and session recovery
+
+<a href="https://bebka16.github.io/note.html">Offical page of the Snail Note at my website</a>
