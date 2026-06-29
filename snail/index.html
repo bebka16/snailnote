@@ -1637,12 +1637,10 @@ function decodeHTML(html) {
         const href = linkElement.getAttribute('href');
         if (!href || href.trim() === '') {
             console.debug('Атрибут href пуст или не задан в #custom-theme-link');
-            // Если href пустой, применяем тему по умолчанию
             applyTheme('vs-dark');
             return false;
         }
 
-        // Проверяем, изменился ли файл
         if (currentThemeFile === href) {
             console.debug(`Файл темы не изменился: ${href}`);
             return false;
@@ -1661,7 +1659,6 @@ function decodeHTML(html) {
 
             const cssText = await response.text();
             
-            // Ищем класс .monaco-editor-theme-select в загруженном CSS
             const themeMatch = cssText.match(/\.monaco-editor-theme-select\s*\{([^}]*)\}/);
             if (!themeMatch) {
                 console.debug('Класс .monaco-editor-theme-select не найден в загруженном файле');
@@ -1669,7 +1666,6 @@ function decodeHTML(html) {
                 return false;
             }
 
-            // Извлекаем значение theme или --theme
             const themeContent = themeMatch[1];
             const themeValueMatch = themeContent.match(/theme\s*:\s*([^;]+);/);
             const themePropertyMatch = themeContent.match(/--theme\s*:\s*([^;]+);/);
@@ -1681,7 +1677,6 @@ function decodeHTML(html) {
                 themeName = themePropertyMatch[1].trim();
             }
 
-            // Удаляем кавычки, если они есть
             if (themeName) {
                 themeName = themeName.replace(/^["']|["']$/g, '');
             }
@@ -1691,7 +1686,7 @@ function decodeHTML(html) {
                 await applyTheme(themeName);
                 return true;
             } else {
-                console.debug('Значение theme или --theme не найдено в правиле .monaco-editor-theme-select');
+                console.debug('Значение theme или --theme не найденено в правиле .monaco-editor-theme-select');
                 currentThemeFile = null;
                 return false;
             }
@@ -1707,10 +1702,8 @@ function decodeHTML(html) {
             const styleSheets = document.styleSheets;
             let themeName = null;
 
-            // Проверяем, есть ли уже загруженный файл с #custom-theme-link
             const linkElement = document.getElementById('custom-theme-link');
             if (linkElement && linkElement.href) {
-                // Проверяем, загружен ли уже этот файл в стилях
                 for (let i = 0; i < styleSheets.length; i++) {
                     try {
                         if (styleSheets[i].href === linkElement.href) {
@@ -1757,7 +1750,6 @@ function decodeHTML(html) {
     function applyTheme(themeName) {
         return new Promise((resolve) => {
             try {
-                // Удаляем кавычки, если они есть
                 themeName = themeName.replace(/^["']|["']$/g, '');
 
                 if (typeof monaco === 'undefined' || !monaco.editor) {
@@ -1808,18 +1800,15 @@ function decodeHTML(html) {
     function watchThemeChanges() {
         const observer = new MutationObserver((mutations) => {
             mutations.forEach(mutation => {
-                // Проверяем изменения атрибутов
                 if (mutation.type === 'attributes' && mutation.attributeName === 'href') {
                     const target = mutation.target;
                     if (target.id === 'custom-theme-link') {
                         console.debug('Обнаружено изменение href у #custom-theme-link');
-                        // Сбрасываем кеш и загружаем новый файл
                         currentThemeFile = null;
                         loadCustomThemeFromLink();
                     }
                 }
                 
-                // Проверяем добавление новых элементов
                 if (mutation.type === 'childList') {
                     mutation.addedNodes.forEach(node => {
                         if (node.nodeType === 1 && node.id === 'custom-theme-link') {
@@ -1829,19 +1818,16 @@ function decodeHTML(html) {
                         }
                     });
                     
-                    // Проверяем удаление элемента
                     mutation.removedNodes.forEach(node => {
                         if (node.nodeType === 1 && node.id === 'custom-theme-link') {
                             console.debug('Обнаружено удаление #custom-theme-link');
                             currentThemeFile = null;
-                            // Применяем тему по умолчанию
                             applyTheme('vs-dark');
                         }
                     });
                 }
             });
             
-            // Дополнительная проверка CSS после изменений
             applyThemeFromCSS();
         });
 
@@ -1864,10 +1850,8 @@ function decodeHTML(html) {
     }
 
     async function init() {
-        // Сначала проверяем кастомный файл темы
         await loadCustomThemeFromLink();
         
-        // Затем применяем из CSS
         applyThemeFromCSS();
         applyThemeFromDataAttribute();
         watchThemeChanges();
