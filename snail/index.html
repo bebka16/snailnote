@@ -306,8 +306,41 @@
     extToLanguage['c'] = 'cpp';
     extToLanguage['h'] = 'cpp';
     extToLanguage['hpp'] = 'cpp';
-
+	
     const imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif'];
+	
+async function refreshExplorer() {
+
+    if (!explorerCurrentPath) return;
+    
+    if (!explorerVisible) return;
+    
+    try {
+        const entries = await window.electronAPI.readDirectory(explorerCurrentPath);
+        
+        const currentItems = new Set();
+        explorerUl.querySelectorAll('li').forEach(li => {
+            const nameSpan = li.querySelector('.li-name');
+            if (nameSpan) {
+                currentItems.add(nameSpan.textContent);
+            }
+        });
+        
+        const newItems = new Set(entries.map(entry => entry.name));
+        
+        const hasChanges = currentItems.size !== newItems.size || 
+                          ![...currentItems].every(name => newItems.has(name));
+        
+        if (hasChanges) {
+            await renderDirectory(explorerCurrentPath);
+        }
+    } catch (error) {
+        console.debug('Ошибка обновления проводника:', error);
+    }
+}
+setInterval(refreshExplorer, 5000);
+
+
 
     function fluentFolderSVG(color) {
       color = color || '#dcb67a';
@@ -929,26 +962,51 @@ function saveBlobExtension(blobUrl) {
     });
 
     function showScaleDialog() {
-      scaleDialog.style.display = 'block';
-      const editorFontSizeEl = document.getElementById('editorFontSize');
-      const interfaceScaleEl = document.getElementById('interfaceScale');
-      if (editor) {
-        editorFontSizeEl.value = editor.getOption(monaco.editor.EditorOption.fontSize) || 14;
-        document.getElementById('editorFontSizeValue').textContent = editorFontSizeEl.value + 'px';
-      }
-      const currentScale = parseInt(document.body.style.zoom) || 100;
-      interfaceScaleEl.value = currentScale;
-      document.getElementById('interfaceScaleValue').textContent = currentScale + '%';
+    scaleDialog.style.display = 'block';
+    
+    const savedSize = parseInt(localStorage.getItem('editorFontSize')) || 14;
+    
+    const editorFontSizeEl = document.getElementById('editorFontSize');
+    const editorFontSizeValueEl = document.getElementById('editorFontSizeValue');
+    
+    if (editorFontSizeEl) {
+        editorFontSizeEl.value = savedSize;
     }
+    if (editorFontSizeValueEl) {
+        editorFontSizeValueEl.textContent = savedSize + 'px';
+    }
+    
+    if (editor) {
+        editor.updateOptions({ fontSize: savedSize });
+    }
+    
+    const interfaceScaleEl = document.getElementById('interfaceScale');
+    const currentScale = parseInt(document.body.style.zoom) || 100;
+    if (interfaceScaleEl) {
+        interfaceScaleEl.value = currentScale;
+        document.getElementById('interfaceScaleValue').textContent = currentScale + '%';
+    }
+}
 
     function closeScaleDialog() { scaleDialog.style.display = 'none'; }
 
     function updateEditorScale() {
-      if (!editor) return;
-      const value = document.getElementById('editorFontSize').value;
-      editor.updateOptions({ fontSize: parseInt(value) });
-      document.getElementById('editorFontSizeValue').textContent = value + 'px';
+    if (!editor) return;
+    
+    const editorFontSizeEl = document.getElementById('editorFontSize');
+    const value = parseInt(editorFontSizeEl.value) || 14;
+    
+    const newSize = Math.min(Math.max(value, 8), 40);
+    
+    editor.updateOptions({ fontSize: newSize });
+    
+    const editorFontSizeValueEl = document.getElementById('editorFontSizeValue');
+    if (editorFontSizeValueEl) {
+        editorFontSizeValueEl.textContent = newSize + 'px';
     }
+    
+    localStorage.setItem('editorFontSize', newSize);
+}
 
     function updateInterfaceScale() {
       const value = document.getElementById('interfaceScale').value;
@@ -1011,7 +1069,7 @@ function saveBlobExtension(blobUrl) {
     async function checkForUpdates() {
     if (localStorage.getItem('updateNotifications') === 'false') return;
     try {
-        const response = await fetch('https://bebka16.github.io/note/update/2.0.txt');
+        const response = await fetch('https://bebka16.github.io/note/update/2.1.txt');
         if (response.ok) {
             const text = await response.text();
             if (text.trim()) {
@@ -1539,6 +1597,8 @@ function decodeHTML(html) {
       showStatusBar = localStorage.getItem('showStatusBar') !== 'false';
       showLanguageIcons = localStorage.getItem('showLanguageIcons') !== 'false';
       statusBar.style.display = showStatusBar ? 'flex' : 'none';
+	  
+	  const savedFontSize = parseInt(localStorage.getItem('editorFontSize')) || 14;
 
       editor = monaco.editor.create(editorElement, {
         value: '',
@@ -1546,14 +1606,51 @@ function decodeHTML(html) {
         theme: currentTheme,
         automaticLayout: true,
         minimap: { enabled: true },
-        fontSize: 14,
+        fontSize: savedFontSize,
         lineNumbers: 'on',
         roundedSelection: true,
         scrollBeyondLastLine: false,
         readOnly: false,
         contextmenu: false
       });
-
+	  
+	  const editorFontSizeEl = document.getElementById('editorFontSize');
+const editorFontSizeValueEl = document.getElementById('editorFontSizeValue');
+if (editorFontSizeEl) {
+    editorFontSizeEl.value = savedFontSize;
+}
+if (editorFontSizeValueEl) {
+    editorFontSizeValueEl.textContent = savedFontSize + 'px';
+}
+// Обработчик колесика мыши для изменения масштаба
+document.addEventListener('wheel', function(event) {
+    const target = event.target;
+    const isInEditor = editorElement.contains(target);
+    
+    if (isInEditor && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Определяем направление прокрутки
+        const delta = event.deltaY > 0 ? -1 : 1;
+        
+        // Получаем текущий размер из ползунка
+        const editorFontSizeEl = document.getElementById('editorFontSize');
+        let currentSize = parseInt(editorFontSizeEl.value) || 14;
+        
+        // Вычисляем новый размер
+        let newSize = currentSize + delta;
+        newSize = Math.min(Math.max(newSize, 8), 40);
+        
+        // Обновляем ползунок
+        editorFontSizeEl.value = newSize;
+        
+        // Вызываем функцию обновления (она сохранит в localStorage)
+        updateEditorScale();
+        
+        return false;
+    }
+}, true);
       editor.onDidChangeCursorPosition(function(e) {
         cursorPosition.textContent = `${e.position.lineNumber}:${e.position.column}`;
         if (currentFile && openFiles[currentFile]) {
@@ -1620,7 +1717,19 @@ function decodeHTML(html) {
       window.addEventListener('menu-zoom-reset', () => { document.body.style.zoom = '100%'; localStorage.setItem('interfaceScale', 100); });
       window.addEventListener('menu-about', () => { openSettings(); setTimeout(() => { settingsSidebar.querySelectorAll('.settings-sidebar-item').forEach(i => i.classList.remove('active')); const about = settingsSidebar.querySelector('[data-section="about"]'); if (about) { about.classList.add('active'); renderSettingsSection('about'); } }, 100); });
     });
-  </script>
+   document.addEventListener('keydown', function(event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        saveCurrentFile();
+    }  
+});
+  document.addEventListener('keydown', function(event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'ы') {
+        event.preventDefault();
+        saveCurrentFile();
+    }  
+});
+  </script>  
 <script>
 (function() {
     'use strict';
@@ -1686,7 +1795,7 @@ function decodeHTML(html) {
                 await applyTheme(themeName);
                 return true;
             } else {
-                console.debug('Значение theme или --theme не найденено в правиле .monaco-editor-theme-select');
+                console.debug('Значение theme или --theme не найдено в правиле .monaco-editor-theme-select');
                 currentThemeFile = null;
                 return false;
             }
